@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Routine Optimizer</title>
+    <!-- PWA Manifest Link -->
+    <link rel="manifest" href="manifest.json">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Chosen Palette: Warm Neutrals & Calm Harmony -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #fcfbf9; /* Warm neutral background */
+            color: #2d3748;
+        }
+
+        /* Chart Container Styling per requirements */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+
+        /* Custom Scrollbar for timeline */
+        .timeline-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+        .timeline-scroll::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        .timeline-scroll::-webkit-scrollbar-thumb {
+            background: #cbd5e0;
+            border-radius: 3px;
+        }
+
+        .card-shadow {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        }
+
+        .transition-colors {
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- Header Section -->
+    <header class="bg-white border-b border-stone-200 sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div>
+                <h1 class="text-2xl font-bold text-stone-800 tracking-tight">Daily Routine Optimizer</h1>
+                <p class="text-stone-500 text-sm">Consistent Action &#8226; Focused Growth</p>
+            </div>
+            
+            <!-- Day Toggle Control -->
+            <div class="flex items-center bg-stone-100 p-1 rounded-lg">
+                <button id="btn-work" class="px-6 py-2 rounded-md text-sm font-semibold transition-colors bg-white text-stone-800 shadow-sm" onclick="setMode('work')">Work Day</button>
+                <button id="btn-off" class="px-6 py-2 rounded-md text-sm font-semibold transition-colors text-stone-500 hover:text-stone-700" onclick="setMode('off')">Off Day</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Grid -->
+    <main class="flex-grow max-w-6xl mx-auto px-4 py-8 w-full grid grid-cols-1 lg:grid-cols-12 gap-8">
+
+        <!-- Left Column: Overview & Toolkit (LG: Col 1-4) -->
+        <section class="lg:col-span-4 space-y-8">
+            
+            <!-- Dashboard Intro -->
+            <div class="bg-white p-6 rounded-xl card-shadow border border-stone-100">
+                <h2 class="text-lg font-bold text-stone-800 mb-2">Today's Snapshot</h2>
+                <p class="text-stone-600 text-sm mb-4">
+                    Visual breakdown of your time allocation. Use this to ensure you are maintaining balance between your ambitious study goals (DSA, SQL, Dev) and necessary recovery (Sleep, Gym).
+                </p>
+                
+                <!-- Dynamic Stats Grid -->
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <div class="bg-blue-50 p-3 rounded-lg text-center">
+                        <span class="block text-2xl font-bold text-blue-700" id="stat-study">4h</span>
+                        <span class="text-xs text-blue-600 font-medium uppercase tracking-wide">Study Focus</span>
+                    </div>
+                    <div class="bg-indigo-50 p-3 rounded-lg text-center">
+                        <span class="block text-2xl font-bold text-indigo-700" id="stat-sleep">7h</span>
+                        <span class="text-xs text-indigo-600 font-medium uppercase tracking-wide">Rest</span>
+                    </div>
+                    <div class="bg-emerald-50 p-3 rounded-lg text-center">
+                        <span class="block text-2xl font-bold text-emerald-700" id="stat-gym">1.5h</span>
+                        <span class="text-xs text-emerald-600 font-medium uppercase tracking-wide">Fitness</span>
+                    </div>
+                    <div class="bg-amber-50 p-3 rounded-lg text-center">
+                        <span class="block text-2xl font-bold text-amber-700" id="stat-work">8.5h</span>
+                        <span class="text-xs text-amber-600 font-medium uppercase tracking-wide">Core Work</span>
+                    </div>
+                </div>
+
+                <!-- Chart Container -->
+                <div class="chart-container">
+                    <canvas id="allocationChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Productivity Toolkit & Pomodoro -->
+            <div class="bg-white p-6 rounded-xl card-shadow border border-stone-100">
+                <h2 class="text-lg font-bold text-stone-800 mb-4 flex items-center">
+                    <span class="mr-2">&#9889;</span> Focus Toolkit
+                </h2>
+                <p class="text-stone-600 text-sm mb-4">
+                    Practical tools derived from your "Tips for Distraction-Free Consistency".
+                </p>
+
+                <!-- Pomodoro Timer -->
+                <div class="bg-stone-800 text-white p-4 rounded-lg mb-6 text-center">
+                    <h3 class="text-sm font-semibold text-stone-300 uppercase mb-2">Study Session Timer</h3>
+                    <div class="text-4xl font-mono font-bold mb-4" id="timer-display">50:00</div>
+                    <div class="flex justify-center gap-2">
+                        <button id="timer-btn" class="px-4 py-1 bg-white text-stone-900 rounded font-bold hover:bg-stone-200 transition-colors" onclick="toggleTimer()">Start Focus</button>
+                        <button class="px-4 py-1 border border-stone-600 text-stone-300 rounded hover:bg-stone-700 transition-colors" onclick="resetTimer()">Reset</button>
+                    </div>
+                    <p class="text-xs text-stone-400 mt-2">50m Work / 10m Break</p>
+                </div>
+
+                <!-- Tips Accordion -->
+                <div class="space-y-2">
+                    <div class="border border-stone-200 rounded-lg overflow-hidden">
+                        <button class="w-full px-4 py-2 text-left bg-stone-50 text-sm font-semibold flex justify-between items-center" onclick="toggleTip('tip1')">
+                            The "Break Bank" Concept <span class="text-stone-400">+</span>
+                        </button>
+                        <div id="tip1" class="hidden px-4 py-3 text-sm text-stone-600 bg-white">
+                            Tempted to check your phone? Don't! Tell yourself, "I'll bank this time for my next scheduled break." Make the break a reward.
+                        </div>
+                    </div>
+                    <div class="border border-stone-200 rounded-lg overflow-hidden">
+                        <button class="w-full px-4 py-2 text-left bg-stone-50 text-sm font-semibold flex justify-between items-center" onclick="toggleTip('tip2')">
+                            Digital Detox <span class="text-stone-400">+</span>
+                        </button>
+                        <div id="tip2" class="hidden px-4 py-3 text-sm text-stone-600 bg-white">
+                            Put your phone in a separate room or "Do Not Disturb" during DSA, SQL, and Dev blocks. Use site blockers like Forest.
+                        </div>
+                    </div>
+                    <div class="border border-stone-200 rounded-lg overflow-hidden">
+                        <button class="w-full px-4 py-2 text-left bg-stone-50 text-sm font-semibold flex justify-between items-center" onclick="toggleTip('tip3')">
+                            Recovery Over Perfection <span class="text-stone-400">+</span>
+                        </button>
+                        <div id="tip3" class="hidden px-4 py-3 text-sm text-stone-600 bg-white">
+                            If you miss a slot, don't scrap the day. Just jump back in at the next time slot. Consistency is about recovery.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- Right Column: Interactive Timeline (LG: Col 5-12) -->
+        <section class="lg:col-span-8 space-y-8">
+            
+            <!-- 1. The Daily Routine Timeline Card -->
+            <div class="bg-white rounded-xl card-shadow border border-stone-100 flex flex-col">
+                <div class="p-6 border-b border-stone-100">
+                    <h2 class="text-xl font-bold text-stone-800" id="schedule-title">Work Day Flow</h2>
+                    <p class="text-stone-500 text-sm mt-1">
+                        Follow this timeline step-by-step. Current active blocks are highlighted.
+                    </p>
+                </div>
+                
+                <!-- Scrollable Timeline Container -->
+                <div class="flex-grow p-6 timeline-scroll overflow-y-auto" style="max-height: 800px;">
+                    <div class="relative border-l-2 border-stone-200 ml-3 space-y-8" id="timeline-container">
+                        <!-- JS renders items here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Next Focus Block Planner (New Section) -->
+            <div class="bg-white p-6 rounded-xl card-shadow border border-stone-100">
+                <h2 class="text-lg font-bold text-stone-800 mb-4 flex items-center">
+                    <span class="mr-2 text-blue-600">&#9998;</span> Next Focus Block Planner
+                </h2>
+                <p class="text-stone-600 text-sm mb-4">
+                    Before starting your next study block, write down the *single, defined task* you will complete. This eliminates choice paralysis.
+                </p>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label for="focus-subject" class="block text-xs font-semibold uppercase text-stone-500 mb-1">Subject</label>
+                        <select id="focus-subject" class="w-full p-2 border border-stone-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm">
+                            <option>Select Subject...</option>
+                            <option>DSA (Data Structures & Algorithms)</option>
+                            <option>SQL (Database Queries)</option>
+                            <option>Development (Project Coding)</option>
+                            <option>Aptitude/Interview Prep</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label for="focus-task" class="block text-xs font-semibold uppercase text-stone-500 mb-1">Defined Task (e.g., Implement Merge Sort, Write INNER JOIN query)</label>
+                        <input type="text" id="focus-task" placeholder="Enter specific task..." class="w-full p-2 border border-stone-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm" />
+                    </div>
+
+                    <div class="flex items-center gap-4">
+                        <button onclick="saveFocusBlock()" class="flex-1 py-2 px-4 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors text-sm shadow-md shadow-blue-200">
+                            Set Focus Block
+                        </button>
+                        <button onclick="clearFocusBlock()" class="py-2 px-4 border border-stone-300 text-stone-700 font-semibold rounded-lg hover:bg-stone-100 transition-colors text-sm">
+                            Clear
+                        </button>
+                    </div>
+                </div>
+
+                <div id="current-focus" class="mt-6 p-4 rounded-lg bg-blue-100 border border-blue-300 hidden">
+                    <h4 class="text-xs font-bold uppercase text-blue-800 mb-1">Current Focus: <span id="focus-time" class="text-sm font-normal italic"></span></h4>
+                    <p class="text-base font-semibold text-blue-900" id="focus-display"></p>
+                </div>
+            </div>
+            
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-stone-50 border-t border-stone-200 py-6 mt-8">
+        <div class="max-w-6xl mx-auto px-4 text-center text-stone-400 text-sm">
+            <p>&copy; 2025 Personalized Routine Planner</p>
+        </div>
+    </footer>
+
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+
+    <script>
+        // --- Data Sources (From Report) ---
+        const schedules = {
+            work: [
+                { time: "5:45 AM", dur: "15 min", title: "Wake Up & Hydrate", type: "life", note: "Get dressed immediately. Gym bag ready." },
+                { time: "6:00 AM", dur: "1.5 hr", title: "Gym Workout & Cool Down", type: "gym", note: "Non-negotiable anchor. Mental & physical focus." },
+                { time: "7:30 AM", dur: "30 min", title: "Shower, Breakfast & Prep", type: "life", note: "MUST be efficient. High protein. Review 1-2 DSA concepts while eating." },
+                { time: "8:00 AM", dur: "30 min", title: "Focused Study: DSA (Block 1)", type: "study", note: "Tackle a difficult topic. Short but high-intensity session before work." },
+                { time: "8:30 AM", dur: "8.5 hrs", title: "Work Time (8:30 AM - 5:00 PM)", type: "work", note: "Take 5 min movement breaks every hour to maintain focus." },
+                { time: "5:00 PM", dur: "15 min", title: "Transition Break", type: "life", note: "Stand up, stretch, get fresh air. Shift from work to study mode." },
+                { time: "5:15 PM", dur: "1 hr", title: "Focused Study: SQL", type: "study", note: "Practical application (writing queries) when the brain is still warm." },
+                { time: "6:15 PM", dur: "15 min", title: "Screen/Fun Break", type: "fun", note: "Designated quick fix screen time." },
+                { time: "6:30 PM", dur: "1 hr", title: "Focused Study: Development", type: "study", note: "Work on a small, defined coding task related to your learning." },
+                { time: "7:30 PM", dur: "1.5 hr", title: "Dinner & Social Time (Fixed)", type: "fun", note: "FIXED. Absolutely no studying during this window. Enjoy." },
+                { time: "9:00 PM", dur: "1.5 hr", title: "Focused Study: DSA (Block 2)", type: "study", note: "Practice problems/reinforcement. This completes the 2 hours of DSA study." },
+                { time: "10:30 PM", dur: "30 min", title: "Wind Down", type: "life", note: "Prep gym bag/to-do list. Read a book—no bright screens." },
+                { time: "11:00 PM", dur: "7 hrs", title: "Lights Out", type: "sleep", note: "Goal: 7 hours restful sleep." }
+            ],
+            off: [
+                { time: "5:45 AM", dur: "15 min", title: "Wake Up & Hydrate", type: "life", note: "Maintain wake time for rhythm." },
+                { time: "6:00 AM", dur: "1.5 hr", title: "Gym Workout & Cool Down", type: "gym", note: "Less rushed. Enjoy the session." },
+                { time: "7:30 AM", dur: "30 min", title: "Shower, Dress, & Breakfast", type: "life", note: "Keep routine structured." },
+                { time: "8:00 AM", dur: "1 hr", title: "Focused Study: DSA (Block 1)", type: "study", note: "High focus session." },
+                { time: "9:00 AM", dur: "15 min", title: "Screen/Fun Break", type: "fun", note: "Short, timed distraction." },
+                { time: "9:15 AM", dur: "1 hr", title: "Focused Study: DSA (Block 2)", type: "study", note: "Finish practice problems." },
+                { time: "10:15 AM", dur: "15 min", title: "Screen/Fun Break", type: "fun", note: "Prepare SQL environment." },
+                { time: "10:30 AM", dur: "1 hr", title: "Focused Study: SQL", type: "study", note: "Deep dive." },
+                { time: "11:30 AM", dur: "1 hr", title: "Focused Study: Development", type: "study", note: "Deep coding work." },
+                { time: "12:30 PM", dur: "1 hr", title: "Lunch & Leisure", type: "life", note: "Proper lunch. No heavy mental load." },
+                { time: "1:30 PM", dur: "1 hr", title: "Afternoon Nap / Rest", type: "sleep", note: "Restorative rest. Eyes closed." },
+                { time: "2:30 PM", dur: "1.5 hr", title: "Project / Aptitude / Prep", type: "study", note: "Mock interviews, portfolio work." },
+                { time: "4:00 PM", dur: "3.5 hrs", title: "FREE TIME / FUN", type: "fun", note: "Guilt-free reward. Hobbies, social." },
+                { time: "7:30 PM", dur: "1.5 hr", title: "Dinner & Social Time", type: "fun", note: "FIXED." },
+                { time: "9:00 PM", dur: "1.5 hr", title: "Wind Down & Prep", type: "life", note: "Review progress, plan upcoming week, and relax before bed." },
+                { time: "10:30 PM", dur: "-", title: "Start Sleep Routine", type: "sleep", note: "" },
+                { time: "11:00 PM", dur: "7 hrs", title: "Lights Out", type: "sleep", note: "Goal: 7 hours sleep." }
+            ]
+        };
+
+        const statsData = {
+            work: { study: "4h", sleep: "7h", gym: "1.5h", work: "8.5h" }, // Updated work time to 8.5h
+            off: { study: "5.5h", sleep: "7h + Nap", gym: "1.5h", work: "0h" }
+        };
+
+        // Chart Data (Approximate hours for visualization)
+        const chartDataSets = {
+            work: [4, 8.5, 1.5, 7, 3], 
+            off: [5.5, 0, 1.5, 8, 9] 
+        };
+
+        // --- State Management ---
+        let currentMode = 'work';
+        let chartInstance = null;
+        let timerInterval = null;
+        let timeLeft = 3000; // 50 minutes in seconds
+        let isTimerRunning = false;
+
+        // --- Core Functions ---
+
+        function init() {
+            // PWA Service Worker Registration
+            if ('serviceWorker' in navigator) {
+                window.addEventListener('load', () => {
+                    navigator.serviceWorker.register('service-worker.js')
+                        .then(registration => {
+                            console.log('SW registered: ', registration);
+                        })
+                        .catch(registrationError => {
+                            console.log('SW registration failed: ', registrationError);
+                        });
+                });
+            }
+            
+            renderChart();
+            renderTimeline();
+            updateStats();
+            loadFocusBlock(); // Load focus block on init
+        }
+
+        function setMode(mode) {
+            currentMode = mode;
+            
+            // Update Buttons
+            const btnWork = document.getElementById('btn-work');
+            const btnOff = document.getElementById('btn-off');
+            
+            if (mode === 'work') {
+                btnWork.className = "px-6 py-2 rounded-md text-sm font-semibold transition-colors bg-white text-stone-800 shadow-sm";
+                btnOff.className = "px-6 py-2 rounded-md text-sm font-semibold transition-colors text-stone-500 hover:text-stone-700";
+                document.getElementById('schedule-title').textContent = "Work Day Flow";
+            } else {
+                btnWork.className = "px-6 py-2 rounded-md text-sm font-semibold transition-colors text-stone-500 hover:text-stone-700";
+                btnOff.className = "px-6 py-2 rounded-md text-sm font-semibold transition-colors bg-white text-stone-800 shadow-sm";
+                document.getElementById('schedule-title').textContent = "Off Day Flow";
+            }
+
+            updateStats();
+            updateChart();
+            renderTimeline();
+        }
+
+        function updateStats() {
+            const data = statsData[currentMode];
+            document.getElementById('stat-study').textContent = data.study;
+            document.getElementById('stat-sleep').textContent = data.sleep;
+            document.getElementById('stat-gym').textContent = data.gym;
+            document.getElementById('stat-work').textContent = data.work;
+        }
+
+        function renderChart() {
+            const ctx = document.getElementById('allocationChart').getContext('2d');
+            chartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Study', 'Work', 'Gym', 'Sleep', 'Life/Fun'],
+                    datasets: [{
+                        data: chartDataSets[currentMode],
+                        backgroundColor: [
+                            '#3b82f6', // Blue (Study)
+                            '#d97706', // Amber (Work)
+                            '#10b981', // Emerald (Gym)
+                            '#4f46e5', // Indigo (Sleep)
+                            '#cbd5e1'  // Slate (Life)
+                        ],
+                        borderWidth: 0,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                usePointStyle: true,
+                                font: { family: 'Inter', size: 11 }
+                            }
+                        }
+                    },
+                    cutout: '70%'
+                }
+            });
+        }
+
+        function updateChart() {
+            chartInstance.data.datasets[0].data = chartDataSets[currentMode];
+            chartInstance.update();
+        }
+
+        function renderTimeline() {
+            const container = document.getElementById('timeline-container');
+            container.innerHTML = '';
+            
+            const events = schedules[currentMode];
+            
+            events.forEach((event, index) => {
+                // Color coding based on type
+                let typeColor = "bg-gray-100 border-gray-300";
+                let icon = "&#9679;"; // default dot
+                
+                if (event.type === 'study') { typeColor = "bg-blue-50 border-blue-200 text-blue-800"; icon = "&#128218;"; } // book
+                else if (event.type === 'work') { typeColor = "bg-amber-50 border-amber-200 text-amber-800"; icon = "&#128188;"; } // briefcase
+                else if (event.type === 'gym') { typeColor = "bg-emerald-50 border-emerald-200 text-emerald-800"; icon = "&#128170;"; } // muscle
+                else if (event.type === 'sleep') { typeColor = "bg-indigo-50 border-indigo-200 text-indigo-800"; icon = "&#128164;"; } // zzz
+                else if (event.type === 'fun') { typeColor = "bg-purple-50 border-purple-200 text-purple-800"; icon = "&#127918;"; } // game
+                else if (event.type === 'life') { typeColor = "bg-stone-100 border-stone-200 text-stone-700"; icon = "&#127969;"; } // house
+                
+                const html = `
+                    <div class="mb-8 flex group">
+                        <div class="absolute -left-3.5 mt-1.5 h-7 w-7 rounded-full border-4 border-white ${typeColor.split(' ')[0]} flex items-center justify-center text-xs shadow-sm">
+                            ${index + 1}
+                        </div>
+                        <div class="ml-6 w-full transform transition-all hover:scale-[1.01]">
+                            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-baseline">
+                                <span class="font-bold text-lg text-stone-800">${event.time}</span>
+                                <span class="text-xs font-semibold uppercase tracking-wider text-stone-400 bg-stone-50 px-2 py-1 rounded">${event.dur}</span>
+                            </div>
+                            <div class="mt-2 p-4 rounded-lg border ${typeColor} relative">
+                                <h3 class="font-bold text-base flex items-center gap-2">
+                                    <span>${icon}</span> ${event.title}
+                                </h3>
+                                <p class="text-sm mt-1 opacity-90">${event.note}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += html;
+            });
+        }
+
+        // --- Interaction Functions ---
+
+        function toggleTip(id) {
+            const el = document.getElementById(id);
+            if (el.classList.contains('hidden')) {
+                el.classList.remove('hidden');
+            } else {
+                el.classList.add('hidden');
+            }
+        }
+
+        // --- Focus Block Logic (using localStorage) ---
+        
+        function saveFocusBlock() {
+            const subject = document.getElementById('focus-subject').value;
+            const task = document.getElementById('focus-task').value.trim();
+
+            if (subject === 'Select Subject...' || task === "") {
+                const modal = document.createElement('div');
+                modal.className = "fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100]";
+                modal.innerHTML = `
+                    <div class="bg-white p-6 rounded-lg shadow-xl text-center max-w-sm">
+                        <h3 class="text-xl font-bold mb-3 text-red-600">Input Required!</h3>
+                        <p class="mb-4 text-stone-700">Please select a Subject and provide a specific Task for your Focus Block.</p>
+                        <button onclick="this.closest('.fixed').remove()" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">Got It</button>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+                return;
+            }
+
+            const focusBlock = {
+                subject: subject,
+                task: task,
+                timestamp: new Date().toLocaleTimeString()
+            };
+
+            // Using localStorage for simple persistence
+            localStorage.setItem('currentFocusBlock', JSON.stringify(focusBlock));
+            displayFocusBlock(focusBlock);
+        }
+
+        function loadFocusBlock() {
+            const storedBlock = localStorage.getItem('currentFocusBlock');
+            if (storedBlock) {
+                const focusBlock = JSON.parse(storedBlock);
+                displayFocusBlock(focusBlock);
+            }
+        }
+
+        function displayFocusBlock(focusBlock) {
+            const displayEl = document.getElementById('focus-display');
+            const timeEl = document.getElementById('focus-time');
+            const containerEl = document.getElementById('current-focus');
+            
+            timeEl.textContent = `Set at ${focusBlock.timestamp}`;
+            displayEl.innerHTML = `
+                <span class="text-blue-600">${focusBlock.subject}:</span> ${focusBlock.task}
+            `;
+            containerEl.classList.remove('hidden');
+
+            // Clear the input fields after setting
+            document.getElementById('focus-subject').value = 'Select Subject...';
+            document.getElementById('focus-task').value = '';
+        }
+
+        function clearFocusBlock() {
+            localStorage.removeItem('currentFocusBlock');
+            document.getElementById('current-focus').classList.add('hidden');
+            
+            const modal = document.createElement('div');
+                modal.className = "fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100]";
+                modal.innerHTML = `
+                    <div class="bg-white p-6 rounded-lg shadow-xl text-center max-w-sm">
+                        <h3 class="text-xl font-bold mb-3 text-emerald-600">Focus Cleared!</h3>
+                        <p class="mb-4 text-stone-700">Ready to plan your next high-impact task.</p>
+                        <button onclick="this.closest('.fixed').remove()" class="px-4 py-2 bg-emerald-600 text-white rounded hover:bg-emerald-700">Close</button>
+                    </div>
+                `;
+            document.body.appendChild(modal);
+        }
+
+        // --- Timer Logic (Simple Pomodoro) ---
+        
+        function formatTime(seconds) {
+            const m = Math.floor(seconds / 60);
+            const s = seconds % 60;
+            return `${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
+        }
+
+        function updateDisplay() {
+            document.getElementById('timer-display').textContent = formatTime(timeLeft);
+        }
+
+        function toggleTimer() {
+            const btn = document.getElementById('timer-btn');
+            
+            if (isTimerRunning) {
+                // Stop
+                clearInterval(timerInterval);
+                isTimerRunning = false;
+                btn.textContent = "Resume";
+                btn.className = "px-4 py-1 bg-white text-stone-900 rounded font-bold hover:bg-stone-200 transition-colors";
+            } else {
+                // Start
+                isTimerRunning = true;
+                btn.textContent = "Pause";
+                btn.className = "px-4 py-1 bg-amber-400 text-stone-900 rounded font-bold hover:bg-amber-500 transition-colors";
+                
+                timerInterval = setInterval(() => {
+                    if (timeLeft > 0) {
+                        timeLeft--;
+                        updateDisplay();
+                    } else {
+                        // Timer finished
+                        clearInterval(timerInterval);
+                        isTimerRunning = false;
+                        btn.textContent = "Start Focus";
+                        // Minimal Audio Beep
+                        const context = new (window.AudioContext || window.webkitAudioContext)();
+                        const oscillator = context.createOscillator();
+                        oscillator.connect(context.destination);
+                        oscillator.start();
+                        setTimeout(() => oscillator.stop(), 200);
+                        // Using a custom message box instead of alert()
+                        const message = "Session Complete! Time for a break.";
+                        const modal = document.createElement('div');
+                        modal.className = "fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100]";
+                        modal.innerHTML = `
+                            <div class="bg-white p-6 rounded-lg shadow-xl text-center max-w-sm">
+                                <h3 class="text-xl font-bold mb-3">Timer Finished!</h3>
+                                <p class="mb-4">${message}</p>
+                                <button onclick="this.closest('.fixed').remove()" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Close</button>
+                            </div>
+                        `;
+                        document.body.appendChild(modal);
+                    }
+                }, 1000);
+            }
+        }
+
+        function resetTimer() {
+            clearInterval(timerInterval);
+            isTimerRunning = false;
+            timeLeft = 3000; // Reset to 50 min
+            updateDisplay();
+            const btn = document.getElementById('timer-btn');
+            btn.textContent = "Start Focus";
+            btn.className = "px-4 py-1 bg-white text-stone-900 rounded font-bold hover:bg-stone-200 transition-colors";
+        }
+
+        // Initialize App
+        window.addEventListener('DOMContentLoaded', init);
+
+    </script>
+</body>
+</html>
